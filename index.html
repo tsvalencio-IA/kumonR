@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,9 +11,9 @@
     <!-- Script Oficial Cloudinary -->
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 
-    <!-- FIREBASE COMPAT (Garante que funcione localmente sem problemas de Módulos) -->
+    <!-- FIREBASE COMPAT - REALTIME DATABASE (Corrigido para Realtime DB) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 
     <style>
         /* BLOQUEIO FÍSICO DO ECRÃ (Zero Scroll) */
@@ -144,6 +144,13 @@
             border: none; box-shadow: 0 1vh 2vh rgba(0,174,239,0.3); transition: 0.2s;
         }
 
+        /* Botão de Tela Cheia (Discreto) */
+        .btn-fullscreen {
+            background: none; border: none; color: var(--k-dark); cursor: pointer;
+            font-size: 3vmin; margin-right: 1.5vw; opacity: 0.5; transition: 0.3s;
+        }
+        .btn-fullscreen:hover { opacity: 1; color: var(--k-blue); }
+
         /* ==========================================
            MODO GESTOR (*177) - DISTINÇÃO CLARA
            ========================================== */
@@ -169,9 +176,9 @@
             content: '📸 ENVIAR VÍDEO/FOTO'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,174,239,0.95); color: white; padding: 2vmin 4vmin; border-radius: 1vmin; font-size: 3vmin; font-weight: bold;
             pointer-events: none; text-align: center; box-shadow: 0 1vmin 2vmin rgba(0,0,0,0.5);
-            opacity: 0; transition: opacity 0.3s; /* <-- CORREÇÃO APLICADA: Oculta o botão por padrão */
+            opacity: 0; transition: opacity 0.3s;
         }
-        .admin-mode .editable-media:hover::after { opacity: 1; } /* Aparece só com o mouse por cima */
+        .admin-mode .editable-media:hover::after { opacity: 1; }
         .admin-mode .editable-media > * { pointer-events: none !important; }
 
         .has-link:not(.editable) { cursor: pointer; border-bottom: 0.3vmin solid var(--k-blue); }
@@ -190,16 +197,17 @@
         .admin-modal-content {
             background: white; padding: 4vmin; border-radius: 2vmin; width: 85vw; max-width: 600px;
             box-shadow: 0 2vmin 5vmin rgba(0,0,0,0.5); font-family: 'Poppins', sans-serif;
+            max-height: 90vh; overflow-y: auto;
         }
         .admin-input { 
-            width: 100%; padding: 2vmin; border: 0.2vmin solid #cbd5e1; border-radius: 1vmin; 
-            font-size: 2.2vmin; margin-bottom: 2vmin; font-family: 'Poppins', sans-serif; color: #1e293b;
+            width: 100%; padding: 1.5vmin; border: 0.2vmin solid #cbd5e1; border-radius: 1vmin; 
+            font-size: 2vmin; margin-bottom: 1.5vmin; font-family: 'Poppins', sans-serif; color: #1e293b;
         }
         .admin-input:focus { outline: 0.2vmin solid var(--k-blue); }
-        .admin-btn { padding: 2vmin 3vmin; border: none; border-radius: 1vmin; font-weight: 700; font-size: 2.2vmin; cursor: pointer; transition: 0.2s; }
+        .admin-btn { padding: 1.5vmin 2.5vmin; border: none; border-radius: 1vmin; font-weight: 700; font-size: 2vmin; cursor: pointer; transition: 0.2s; }
         .btn-primary { background: var(--k-blue); color: white; }
         .btn-secondary { background: #e2e8f0; color: var(--txt-main); }
-        .btn-upload { background: var(--k-orange); color: white; width: 100%; margin-bottom: 2vmin; font-size: 2.5vmin !important; padding: 2.5vmin !important;}
+        .btn-upload { background: var(--k-orange); color: white; width: 100%; margin-bottom: 2vmin; font-size: 2.2vmin !important; padding: 2vmin !important;}
         .btn-danger { background: #ef4444; color: white; }
         .warning-box { background: #fef2f2; border-left: 0.5vmin solid #ef4444; padding: 1.5vmin; color: #b91c1c; font-size: 1.6vmin; margin-bottom: 2vmin; font-weight: 600; }
     </style>
@@ -238,13 +246,19 @@
                     <i class="fa-solid fa-gear"></i> Cloudinary
                 </button>
                 <button id="btn-config-firebase" style="display: none; background: var(--k-blue); color: white; border: none; padding: 1.5vh 2vw; border-radius: 3vh; font-weight: 800; font-size: 2vh; cursor: pointer; box-shadow: 0 1vh 2vh rgba(0, 174, 239, 0.4); z-index: 1000;">
-                    <i class="fa-solid fa-database"></i> Firebase
+                    <i class="fa-solid fa-database"></i> Realtime DB
                 </button>
             </div>
 
-            <div style="display: flex; flex-direction: column; align-items: flex-end;">
-                <span class="txt-small">Reunião 2026</span>
-                <span class="txt-small" style="text-transform: none; color: #cbd5e1;">powered by <strong style="color: var(--k-dark);">thIAguinho Soluções</strong></span>
+            <div style="display: flex; align-items: center;">
+                <!-- Botão Tela Cheia para o Projetor -->
+                <button class="btn-fullscreen" onclick="window.toggleFullScreen()" title="Tela Cheia (Tecla F)">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+                <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                    <span class="txt-small">Reunião 2026</span>
+                    <span class="txt-small" style="text-transform: none; color: #cbd5e1;">powered by <strong style="color: var(--k-dark);">thIAguinho Soluções</strong></span>
+                </div>
             </div>
         </footer>
     </div>
@@ -264,44 +278,66 @@
             }
         }
 
-        let currentIndex = 0;
-        let isAdmin = false;
-        let adminClicks = 0;
-        let currentEditingId = null;
-        let currentEditingType = null; // 'link' ou 'media'
+        window.currentIndex = 0;
+        window.isAdmin = false;
+        window.adminClicks = 0;
+        window.currentEditingId = null;
+        window.currentEditingType = null;
 
-        let savedLinks = safeParseJSON('kumon_v177_links', {});
-        let savedMedia = safeParseJSON('kumon_v177_media', {});
-        let cloudinaryConfig = safeParseJSON('kumon_v177_cloud', {cloudName: "", preset: ""});
-        let firebaseCfg = safeParseJSON('kumon_v177_firebase', {apiKey: "", projectId: ""});
+        window.savedLinks = safeParseJSON('kumon_v177_links', {});
+        window.savedMedia = safeParseJSON('kumon_v177_media', {});
+        window.cloudinaryConfig = safeParseJSON('kumon_v177_cloud', {cloudName: "", preset: ""});
+        
+        // NOVO FORMATO COM TODOS OS 6 CAMPOS DO FIREBASE DO USUÁRIO
+        window.firebaseCfg = safeParseJSON('kumon_v177_firebase', {
+            apiKey: "", 
+            authDomain: "", 
+            projectId: "", 
+            storageBucket: "", 
+            messagingSenderId: "", 
+            appId: "",
+            databaseURL: "" // Adicionado para garantir conexão do Realtime DB
+        });
 
         let db = null;
-        if (firebaseCfg.apiKey && firebaseCfg.projectId) {
+        
+        // Tenta inicializar se as chaves básicas estiverem presentes
+        if (window.firebaseCfg.apiKey && window.firebaseCfg.projectId) {
             try {
-                firebase.initializeApp(firebaseCfg);
-                db = firebase.firestore();
-                db.collection("kumon_config").doc("settings").onSnapshot((doc) => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        savedLinks = data.links || savedLinks;
-                        savedMedia = data.media || savedMedia;
-                        renderSlide();
+                // Infere o database URL se o usuário não preencheu (Padrão do Firebase Realtime DB)
+                if (!window.firebaseCfg.databaseURL) {
+                    window.firebaseCfg.databaseURL = `https://${window.firebaseCfg.projectId}-default-rtdb.firebaseio.com`;
+                }
+
+                firebase.initializeApp(window.firebaseCfg);
+                db = firebase.database(); // AGORA USANDO REALTIME DATABASE
+                
+                // Leitura em tempo real
+                db.ref("kumon_config/settings").on("value", (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        window.savedLinks = data.links || window.savedLinks;
+                        window.savedMedia = data.media || window.savedMedia;
+                        window.renderSlide();
                     }
                 });
-            } catch(e) { console.error("Erro Firebase: ", e); }
+            } catch(e) { console.error("Erro Firebase Realtime DB: ", e); }
         }
 
-        function saveData() {
-            localStorage.setItem('kumon_v177_links', JSON.stringify(savedLinks));
-            localStorage.setItem('kumon_v177_media', JSON.stringify(savedMedia));
+        window.saveData = function() {
+            localStorage.setItem('kumon_v177_links', JSON.stringify(window.savedLinks));
+            localStorage.setItem('kumon_v177_media', JSON.stringify(window.savedMedia));
+            
+            // Salva na Nuvem se o BD estiver ativo
             if (db) {
-                db.collection("kumon_config").doc("settings").set({
-                    links: savedLinks, media: savedMedia
-                }, { merge: true }).catch(e => console.error(e));
+                db.ref("kumon_config/settings").set({
+                    links: window.savedLinks, 
+                    media: window.savedMedia
+                }).catch(e => console.error("Erro ao escrever no DB:", e));
             }
         }
 
-        // DADOS 100% REAIS
+        // DADOS 100% REAIS (Slides) - Intocados
         const slidesData = [
             { id: 'capa', type: 'cover', t: "REUNIÃO DE PAIS 2026", sub: "KUMON RIO PRETO SHOPPING", ext: "Bem-vindos!", bg: "linear-gradient(135deg, #00AEEF, #004578)" },
             
@@ -372,12 +408,12 @@
               defaultMedia: "https://static.vecteezy.com/system/resources/previews/035/633/004/non_2x/paper-spiral-wall-calendar-and-clocks-calendar-clocks-flat-icon-schedule-appointment-organizer-timesheet-time-management-important-date-illustration-in-flat-style-vector.jpg",
               items: ["Atenção máxima aos horários de aula agendados na unidade. Chegar no horário garante o fluxo!", "As reposições devem ser marcadas sempre com antecedência na recepção.", "Lembre-se: A consistência diária é o que garante os resultados do método.", "Mantenham sempre comunicação aberta com a nossa equipe administrativa."] },
             
-            { id: 'fim', type: 'end', title: "MUITO OBRIGADO!", subtitle: "Unidade Kumon Rio Preto Shopping", contact: "Tel: (17) 98225-2244" }
+            { id: 'fim', type: 'end', title: "MUITO OBRIGADO!", subtitle: "Unidade Kumon Rio Preto Shopping", contact: "Tel: 3227-0644" }
         ];
 
-        // GESTÃO DE MÍDIA RENDERIZADOR (Com Placeholder de Fallback para links quebrados)
-        function getMediaTag(mediaId, defaultType, defaultMediaUrl) {
-            let src = savedMedia[mediaId] || defaultMediaUrl;
+        // GESTÃO DE MÍDIA RENDERIZADOR 
+        window.getMediaTag = function(mediaId, defaultType, defaultMediaUrl) {
+            let src = window.savedMedia[mediaId] || defaultMediaUrl;
             
             if (!src) return `
                 <div style="color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; opacity: 0.5;">
@@ -390,15 +426,16 @@
                 if(vid && vid.includes('&')) vid = vid.split('&')[0];
                 return `<iframe src="https://www.youtube.com/embed/${vid}?autoplay=0" allowfullscreen></iframe>`;
             }
-            if (src.endsWith('.mp4') || defaultType === 'video') return `<video src="${src}" controls></video>`;
+            if (src.endsWith('.mp4') || defaultType === 'video') {
+                return `<video src="${src}" controls class="slide-video"></video>`; 
+            }
             
-            // Fallback de imagem corrigido
             return `<img src="${src}" alt="Midia" onerror="this.onerror=null; this.src='https://placehold.co/800x600/e2e8f0/64748b?text=Erro+ao+carregar+imagem';" />`;
         }
 
         // MOTOR RENDER
-        function renderSlide() {
-            const data = slidesData[currentIndex];
+        window.renderSlide = function() {
+            const data = slidesData[window.currentIndex];
             const mainContent = document.getElementById('main-content');
             const header = document.getElementById('main-header');
             let html = '';
@@ -433,7 +470,7 @@
                 </div>`;
             }
             else if (data.type === 'media-left' || data.type === 'media-right') {
-                const mediaBlock = `<div class="media-box editable-media" data-media-id="${data.mediaId}" style="flex: 1; border: 0.8vmin solid #e2e8f0; background: white;">${getMediaTag(data.mediaId, data.mediaType, data.defaultMedia)}</div>`;
+                const mediaBlock = `<div class="media-box editable-media" data-media-id="${data.mediaId}" style="flex: 1; border: 0.8vmin solid #e2e8f0; background: white;">${window.getMediaTag(data.mediaId, data.mediaType, data.defaultMedia)}</div>`;
                 const listBlock = `<div class="flex-col-locked" style="flex: 1.2;">${data.items.map((item, i) => `<div class="card-box editable" data-id="${data.id}_i${i}" style="padding: 2vmin; border-left-width: 0.8vmin;"><div style="background: #f0f9ff; color: var(--k-blue); width: 4.5vmin; height: 4.5vmin; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;" class="icon-md"><i class="fa-solid fa-check"></i></div><p class="txt-body" style="margin:0; font-size: 2.2vmin;">${item}</p></div>`).join('')}</div>`;
                 html = `<div class="flex-row-locked w-full h-full" style="align-items: stretch; padding: 2vh 0;">${data.type === 'media-left' ? mediaBlock + listBlock : listBlock + mediaBlock}</div>`;
             }
@@ -454,53 +491,83 @@
                 html = `<div class="flex-row-locked w-full h-full" style="justify-content: center;">${data.stats.map((s, i) => `<div class="grid-card editable" data-id="${data.id}_s${i}" style="border-bottom: none; border-top: 2.5vmin solid ${i===0 ? 'var(--k-blue)' : 'var(--k-orange)'}; justify-content: center; gap: 3vh;"><div class="txt-mega" style="font-size: 18vmin; color: ${s.color};">${s.val}</div><div class="txt-title" style="font-size: 4vmin; color: #94a3b8;">${s.label}</div></div>`).join('')}</div>`;
             }
             else if (data.type === 'sophia') {
-                html = `<div class="flex-row-locked w-full h-full" style="align-items: stretch; padding: 2vh 0;"><div class="flex-col-locked" style="flex: 1.2; background: #f8fafc; padding: 5vmin; border-radius: 3vmin; border-left: 1.5vmin solid var(--k-blue); justify-content: center;"><div style="background: var(--k-yellow); color: var(--k-dark); padding: 1.5vmin 3vmin; border-radius: 3vmin; font-weight: 900; align-self: flex-start; box-shadow: 0 1vmin 2vmin rgba(0,0,0,0.1);" class="txt-small"><i class="fa-solid fa-trophy"></i> ALUNA DE SUCESSO</div><h3 class="txt-mega editable" data-id="${data.id}_name" style="margin: 3vh 0;">${data.name}</h3><div class="flex-col-locked" style="gap: 2.5vh; justify-content: flex-start;">${data.details.map((d, i) => `<div style="display: flex; align-items: flex-start; gap: 2.5vmin;" class="editable" data-id="${data.id}_d${i}"><i class="fa-solid fa-check" style="color: var(--k-blue); font-size: 3.5vmin; margin-top: 0.5vmin;"></i><span class="txt-body" style="font-size: 3vmin;">${d}</span></div>`).join('')}</div></div><div class="media-box editable-media" data-media-id="${data.mediaId}" style="flex: 1; border: 0.8vmin solid #e2e8f0; background: black;">${getMediaTag(data.mediaId, 'video', data.defaultMedia)}</div></div>`;
+                html = `<div class="flex-row-locked w-full h-full" style="align-items: stretch; padding: 2vh 0;"><div class="flex-col-locked" style="flex: 1.2; background: #f8fafc; padding: 5vmin; border-radius: 3vmin; border-left: 1.5vmin solid var(--k-blue); justify-content: center;"><div style="background: var(--k-yellow); color: var(--k-dark); padding: 1.5vmin 3vmin; border-radius: 3vmin; font-weight: 900; align-self: flex-start; box-shadow: 0 1vmin 2vmin rgba(0,0,0,0.1);" class="txt-small"><i class="fa-solid fa-trophy"></i> ALUNA DE SUCESSO</div><h3 class="txt-mega editable" data-id="${data.id}_name" style="margin: 3vh 0;">${data.name}</h3><div class="flex-col-locked" style="gap: 2.5vh; justify-content: flex-start;">${data.details.map((d, i) => `<div style="display: flex; align-items: flex-start; gap: 2.5vmin;" class="editable" data-id="${data.id}_d${i}"><i class="fa-solid fa-check" style="color: var(--k-blue); font-size: 3.5vmin; margin-top: 0.5vmin;"></i><span class="txt-body" style="font-size: 3vmin;">${d}</span></div>`).join('')}</div></div><div class="media-box editable-media" data-media-id="${data.mediaId}" style="flex: 1; border: 0.8vmin solid #e2e8f0; background: black;">${window.getMediaTag(data.mediaId, 'video', data.defaultMedia)}</div></div>`;
             }
             else if (data.type === 'end') {
                 html = `<div class="flex-col-locked" style="align-items: center; text-align: center; height: 100%;"><i class="fa-regular fa-handshake icon-xl" style="color: var(--k-orange); margin-bottom: 2vh;"></i><h2 class="txt-mega editable" data-id="${data.id}_t" style="font-size: 9vmin;">${data.title}</h2><p class="txt-sub editable" data-id="${data.id}_sub" style="margin: 2vh 0; color: var(--k-dark);">${data.subtitle}</p><div class="editable" data-id="${data.id}_contact" style="background: var(--k-blue); color: white; padding: 2.5vh 5vw; border-radius: 5vh; margin-top: 3vh; box-shadow: 0 2vmin 4vmin rgba(0,174,239,0.3);"><span class="txt-title" style="color: white; text-transform: none; font-size: 4vmin;">${data.contact}</span></div></div>`;
             }
 
             mainContent.innerHTML = `<div class="slide active w-full h-full">${html}</div>`;
-            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / slidesData.length) * 100}%`;
-            setupGestor();
+            document.getElementById('progress-bar').style.width = `${((window.currentIndex + 1) / slidesData.length) * 100}%`;
+            window.setupGestor();
         }
 
-        // EVENTOS NAVEGAÇÃO
-        document.getElementById('btn-next').addEventListener('click', () => { if (currentIndex < slidesData.length - 1) { currentIndex++; renderSlide(); } });
-        document.getElementById('btn-prev').addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; renderSlide(); } });
+        // ==========================================
+        // EVENTOS DE NAVEGAÇÃO E CONTROLE DE PROJETOR
+        // ==========================================
+        window.nextSlide = function() { if (window.currentIndex < slidesData.length - 1) { window.currentIndex++; window.renderSlide(); } };
+        window.prevSlide = function() { if (window.currentIndex > 0) { window.currentIndex--; window.renderSlide(); } };
+
+        document.getElementById('btn-next').addEventListener('click', window.nextSlide);
+        document.getElementById('btn-prev').addEventListener('click', window.prevSlide);
+
+        window.toggleFullScreen = function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        };
+
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') { if (currentIndex < slidesData.length - 1) { currentIndex++; renderSlide(); } }
-            if (e.key === 'ArrowLeft' || e.key === 'Backspace') { if (currentIndex > 0) { currentIndex--; renderSlide(); } }
+            if (e.target.tagName === 'INPUT') return;
+            if (['Space', ' ', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp'].includes(e.key)) e.preventDefault();
+
+            const videoElement = document.querySelector('.slide.active .slide-video');
+
+            if (e.key === ' ' || e.key === 'Enter') {
+                if (videoElement) {
+                    if (videoElement.paused) videoElement.play();
+                    else videoElement.pause();
+                    return; 
+                } else {
+                    window.nextSlide();
+                    return;
+                }
+            }
+
+            if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === 'ArrowDown') window.nextSlide();
+            if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'ArrowUp' || e.key === 'Backspace') window.prevSlide();
+            if (e.key === 'f' || e.key === 'F') window.toggleFullScreen();
         });
 
         // ==========================================
         // GESTOR (MODAIS E LÓGICA V177)
         // ==========================================
         document.getElementById('logo-btn').addEventListener('click', () => {
-            adminClicks++;
-            if (adminClicks === 3) {
+            window.adminClicks++;
+            if (window.adminClicks === 3) {
                 const pass = prompt("SISTEMA GESTOR (*177). SENHA:");
                 if (pass === "*177") {
-                    isAdmin = true; 
+                    window.isAdmin = true; 
                     document.body.classList.add('admin-mode');
                     document.getElementById('btn-config-cloudinary').style.display = 'block';
                     document.getElementById('btn-config-firebase').style.display = 'block';
-                    renderSlide(); 
+                    window.renderSlide(); 
                 } else { alert("Senha Incorreta."); }
-                adminClicks = 0;
+                window.adminClicks = 0;
             }
         });
 
-        // Fechar Modal
         const overlay = document.getElementById('admin-modal-overlay');
-        function closeAdminModal() { overlay.style.display = 'none'; }
-        overlay.addEventListener('click', function(e) { if (e.target === this) closeAdminModal(); });
+        window.closeAdminModal = function() { overlay.style.display = 'none'; }
+        overlay.addEventListener('click', function(e) { if (e.target === this) window.closeAdminModal(); });
 
-        // MODAL 1: Links Comuns e Upload para Textos (Laranjas)
-        function openLinkModal(linkId) {
-            currentEditingId = linkId;
-            currentEditingType = 'link';
-            const currentUrl = savedLinks[linkId] || "";
+        // MODAL 1: Links Comuns
+        window.openLinkModal = function(linkId) {
+            window.currentEditingId = linkId;
+            window.currentEditingType = 'link';
+            const currentUrl = window.savedLinks[linkId] || "";
             
             overlay.innerHTML = `
                 <div class="admin-modal-content">
@@ -524,34 +591,33 @@
             `;
             overlay.style.display = 'flex';
             
-            document.getElementById('btn-cancel-modal').addEventListener('click', closeAdminModal);
+            document.getElementById('btn-cancel-modal').addEventListener('click', window.closeAdminModal);
             
             document.getElementById('btn-remove-link').addEventListener('click', () => {
-                delete savedLinks[currentEditingId];
-                saveData(); closeAdminModal(); renderSlide();
+                delete window.savedLinks[window.currentEditingId];
+                window.saveData(); window.closeAdminModal(); window.renderSlide();
             });
             
             document.getElementById('btn-save-link').addEventListener('click', () => {
                 const val = document.getElementById('link-input').value.trim();
-                if (val === "") delete savedLinks[currentEditingId]; else savedLinks[currentEditingId] = val;
-                saveData(); closeAdminModal(); renderSlide();
+                if (val === "") delete window.savedLinks[window.currentEditingId]; else window.savedLinks[window.currentEditingId] = val;
+                window.saveData(); window.closeAdminModal(); window.renderSlide();
             });
 
-            // Botão de upload via Cloudinary para gerar o link
             document.getElementById('btn-upload-link-file').addEventListener('click', () => {
                 if(typeof cloudinary === 'undefined') { alert("O script do Cloudinary não carregou."); return; }
-                if(!cloudinaryConfig.cloudName || !cloudinaryConfig.preset) {
+                if(!window.cloudinaryConfig.cloudName || !window.cloudinaryConfig.preset) {
                     alert("Por favor, configure o Cloudinary no botão Laranja ⚙️ no rodapé primeiro!");
-                    closeAdminModal(); return;
+                    window.closeAdminModal(); return;
                 }
                 
                 var myWidget = cloudinary.createUploadWidget({
-                    cloudName: cloudinaryConfig.cloudName,
-                    uploadPreset: cloudinaryConfig.preset,
+                    cloudName: window.cloudinaryConfig.cloudName,
+                    uploadPreset: window.cloudinaryConfig.preset,
                     sources: ['local', 'url', 'camera'],
                     multiple: false,
-                    clientAllowedFormats: ['image', 'video', 'pdf', 'document'], // Permite PDF e Documentos
-                    maxFileSize: 104857600 // 100MB max limit
+                    clientAllowedFormats: ['image', 'video', 'pdf', 'document'], 
+                    maxFileSize: 104857600 
                 }, (error, result) => {
                     if (!error && result && result.event === "success") {
                         document.getElementById('link-input').value = result.info.secure_url;
@@ -561,11 +627,11 @@
             });
         }
 
-        // MODAL 2: Mídia (Vídeos e Fotos Embutidas - Caixas Azuis)
-        function openMediaModal(mediaId) {
-            currentEditingId = mediaId;
-            currentEditingType = 'media';
-            const currentUrl = savedMedia[mediaId] || "";
+        // MODAL 2: Mídia
+        window.openMediaModal = function(mediaId) {
+            window.currentEditingId = mediaId;
+            window.currentEditingType = 'media';
+            const currentUrl = window.savedMedia[mediaId] || "";
             
             overlay.innerHTML = `
                 <div class="admin-modal-content">
@@ -573,7 +639,7 @@
                     <p style="font-size: 2vmin; color: var(--txt-main); margin-bottom: 3vmin; text-align: center; font-weight: 600;">Deseja exibir um Vídeo ou Foto aqui?</p>
                     
                     <div class="warning-box">
-                        <i class="fa-solid fa-triangle-exclamation"></i> IMPORTANTE: A sua conta Cloudinary (Upload Preset) DEVE estar configurada como "Unsigned" (Não assinado) nas definições de upload.
+                        <i class="fa-solid fa-triangle-exclamation"></i> IMPORTANTE: A sua conta Cloudinary (Upload Preset) DEVE estar configurada como "Unsigned".
                     </div>
 
                     <button class="admin-btn btn-upload" id="btn-upload-media">
@@ -594,88 +660,82 @@
             `;
             overlay.style.display = 'flex';
             
-            document.getElementById('btn-cancel-media').addEventListener('click', closeAdminModal);
+            document.getElementById('btn-cancel-media').addEventListener('click', window.closeAdminModal);
             
             document.getElementById('btn-remove-media').addEventListener('click', () => {
-                delete savedMedia[currentEditingId];
-                saveData(); closeAdminModal(); renderSlide();
+                delete window.savedMedia[window.currentEditingId];
+                window.saveData(); window.closeAdminModal(); window.renderSlide();
             });
 
             document.getElementById('btn-save-media').addEventListener('click', () => {
                 const val = document.getElementById('media-link-input').value.trim();
-                if (val === "") delete savedMedia[currentEditingId]; else savedMedia[currentEditingId] = val;
-                saveData(); closeAdminModal(); renderSlide();
+                if (val === "") delete window.savedMedia[window.currentEditingId]; else window.savedMedia[window.currentEditingId] = val;
+                window.saveData(); window.closeAdminModal(); window.renderSlide();
             });
 
             document.getElementById('btn-upload-media').addEventListener('click', () => {
                 if(typeof cloudinary === 'undefined') { alert("O script do Cloudinary não carregou."); return; }
-                if(!cloudinaryConfig.cloudName || !cloudinaryConfig.preset) {
+                if(!window.cloudinaryConfig.cloudName || !window.cloudinaryConfig.preset) {
                     alert("Por favor, configure o Cloudinary no botão Laranja ⚙️ no rodapé primeiro!");
-                    closeAdminModal(); return;
+                    window.closeAdminModal(); return;
                 }
                 
                 var myWidget = cloudinary.createUploadWidget({
-                    cloudName: cloudinaryConfig.cloudName,
-                    uploadPreset: cloudinaryConfig.preset,
+                    cloudName: window.cloudinaryConfig.cloudName,
+                    uploadPreset: window.cloudinaryConfig.preset,
                     sources: ['local', 'url', 'camera'],
                     multiple: false,
-                    clientAllowedFormats: ['image', 'video'], // ACEITA VÍDEO E FOTO ESTATICO EXPLICITAMENTE
-                    maxFileSize: 104857600 // 100MB max limit
+                    clientAllowedFormats: ['image', 'video'],
+                    maxFileSize: 104857600 
                 }, (error, result) => {
                     if (!error && result && result.event === "success") {
-                        savedMedia[currentEditingId] = result.info.secure_url;
-                        saveData(); closeAdminModal(); renderSlide();
+                        window.savedMedia[window.currentEditingId] = result.info.secure_url;
+                        window.saveData(); window.closeAdminModal(); window.renderSlide();
                     }
                 });
                 myWidget.open();
             });
         }
 
-        // BIND DOS CLIQUES (A Mágica da UI do Administrador)
-        function setupGestor() {
-            // Textos normais (Laranja) -> LINK
+        // BIND DOS CLIQUES UI
+        window.setupGestor = function() {
             document.querySelectorAll('.editable').forEach(el => {
                 const id = el.dataset.id;
-                if (savedLinks[id]) el.classList.add('has-link'); else el.classList.remove('has-link');
+                if (window.savedLinks[id]) el.classList.add('has-link'); else el.classList.remove('has-link');
                 
                 el.onclick = null; 
                 el.onclick = (e) => {
-                    if (isAdmin) {
+                    if (window.isAdmin) {
                         e.stopPropagation(); e.preventDefault();
-                        openLinkModal(id);
-                    } else if (savedLinks[id]) { 
-                        e.stopPropagation(); e.preventDefault(); window.open(savedLinks[id], '_blank'); 
+                        window.openLinkModal(id);
+                    } else if (window.savedLinks[id]) { 
+                        e.stopPropagation(); e.preventDefault(); window.open(window.savedLinks[id], '_blank'); 
                     }
                 };
             });
 
-            // Mídias e Blocos de Imagem (Azul) -> FOTO E VÍDEO
-            if (isAdmin) {
+            if (window.isAdmin) {
                 document.querySelectorAll('.editable-media').forEach(box => {
                     box.onclick = null;
                     box.onclick = (e) => {
                         e.stopPropagation(); e.preventDefault();
-                        openMediaModal(box.dataset.mediaId);
+                        window.openMediaModal(box.dataset.mediaId);
                     };
                 });
             }
         }
 
-        // CLOUDINARY E FIREBASE CONFIG
+        // CONFIG CLOUDINARY MODAL
         document.getElementById('btn-config-cloudinary').addEventListener('click', () => {
             overlay.innerHTML = `
                 <div class="admin-modal-content">
                     <h3 style="font-size: 3vmin; font-weight: 800; margin-bottom: 2vmin; color: var(--k-dark);">⚙️ Configuração Cloudinary</h3>
                     <p style="font-size: 1.8vmin; color: #64748b; margin-bottom: 2vmin;">Insira os dados para ativar o upload de imagens e vídeos no seu GitHub.</p>
                     
-                    <div class="warning-box">
-                        <i class="fa-solid fa-triangle-exclamation"></i> O seu "Upload Preset" DEVE estar configurado como "Unsigned" nas configurações do Cloudinary.
-                    </div>
-
                     <label style="font-weight: bold; font-size: 1.8vmin;">Cloud Name:</label>
-                    <input type="text" id="cfg-cloudname" class="admin-input" value="${cloudinaryConfig.cloudName}" placeholder="Ex: dxkxvxyz">
+                    <input type="text" id="cfg-cloudname" class="admin-input" value="${window.cloudinaryConfig.cloudName}" placeholder="Ex: dxkxvxyz">
                     <label style="font-weight: bold; font-size: 1.8vmin;">Upload Preset (Unsigned):</label>
-                    <input type="text" id="cfg-preset" class="admin-input" value="${cloudinaryConfig.preset}" placeholder="Ex: my_preset">
+                    <input type="text" id="cfg-preset" class="admin-input" value="${window.cloudinaryConfig.preset}" placeholder="Ex: my_preset">
                     <div style="display: flex; gap: 2vmin; justify-content: flex-end; margin-top: 2vmin;">
                         <button class="admin-btn btn-secondary" id="btn-cancel-cfg">Cancelar</button>
                         <button class="admin-btn btn-primary" id="btn-save-cfg">Guardar Configuração</button>
@@ -683,24 +743,53 @@
                 </div>
             `;
             overlay.style.display = 'flex';
-            document.getElementById('btn-cancel-cfg').addEventListener('click', closeAdminModal);
+            document.getElementById('btn-cancel-cfg').addEventListener('click', window.closeAdminModal);
             document.getElementById('btn-save-cfg').addEventListener('click', () => {
-                cloudinaryConfig.cloudName = document.getElementById('cfg-cloudname').value.trim();
-                cloudinaryConfig.preset = document.getElementById('cfg-preset').value.trim();
-                localStorage.setItem('kumon_v177_cloud', JSON.stringify(cloudinaryConfig));
-                alert("Configurações do Cloudinary salvas localmente!"); closeAdminModal();
+                window.cloudinaryConfig.cloudName = document.getElementById('cfg-cloudname').value.trim();
+                window.cloudinaryConfig.preset = document.getElementById('cfg-preset').value.trim();
+                localStorage.setItem('kumon_v177_cloud', JSON.stringify(window.cloudinaryConfig));
+                alert("Configurações do Cloudinary salvas localmente!"); window.closeAdminModal();
             });
         });
 
+        // CONFIG FIREBASE MODAL (6 CAMPOS)
         document.getElementById('btn-config-firebase').addEventListener('click', () => {
             overlay.innerHTML = `
                 <div class="admin-modal-content">
-                    <h3 style="font-size: 3vmin; font-weight: 800; margin-bottom: 2vmin; color: var(--k-dark);">☁️ Configuração Firebase (Database)</h3>
-                    <p style="font-size: 1.8vmin; color: #64748b; margin-bottom: 2vmin;">Para salvar em tempo real no Github Pages, insira o seu projeto.</p>
-                    <label style="font-weight: bold; font-size: 1.8vmin;">API Key:</label>
-                    <input type="text" id="cfg-fb-key" class="admin-input" value="${firebaseCfg.apiKey}" placeholder="Ex: AIzaSyB...">
-                    <label style="font-weight: bold; font-size: 1.8vmin;">Project ID:</label>
-                    <input type="text" id="cfg-fb-pid" class="admin-input" value="${firebaseCfg.projectId}" placeholder="Ex: meu-projeto-123">
+                    <h3 style="font-size: 3vmin; font-weight: 800; margin-bottom: 1.5vmin; color: var(--k-dark);">☁️ Configuração Firebase (Database)</h3>
+                    <p style="font-size: 1.6vmin; color: #64748b; margin-bottom: 2vmin;">Cole os dados gerados pelo Firebase para sincronização em tempo real no GitHub Pages.</p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5vmin;">
+                        <div>
+                            <label style="font-weight: bold; font-size: 1.6vmin;">API Key:</label>
+                            <input type="text" id="cfg-fb-key" class="admin-input" value="${window.firebaseCfg.apiKey}" placeholder="AIzaSy...">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 1.6vmin;">Project ID:</label>
+                            <input type="text" id="cfg-fb-pid" class="admin-input" value="${window.firebaseCfg.projectId}" placeholder="meu-projeto-123">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 1.6vmin;">Auth Domain:</label>
+                            <input type="text" id="cfg-fb-auth" class="admin-input" value="${window.firebaseCfg.authDomain}" placeholder="...firebaseapp.com">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 1.6vmin;">Database URL:</label>
+                            <input type="text" id="cfg-fb-dburl" class="admin-input" value="${window.firebaseCfg.databaseURL}" placeholder="https://...firebaseio.com">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 1.6vmin;">Storage Bucket:</label>
+                            <input type="text" id="cfg-fb-storage" class="admin-input" value="${window.firebaseCfg.storageBucket}" placeholder="...firebasestorage.app">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 1.6vmin;">Messaging Sender ID:</label>
+                            <input type="text" id="cfg-fb-sender" class="admin-input" value="${window.firebaseCfg.messagingSenderId}" placeholder="123456789">
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label style="font-weight: bold; font-size: 1.6vmin;">App ID:</label>
+                            <input type="text" id="cfg-fb-appid" class="admin-input" value="${window.firebaseCfg.appId}" placeholder="1:123456789:web:...">
+                        </div>
+                    </div>
+
                     <div style="display: flex; gap: 2vmin; justify-content: flex-end; margin-top: 2vmin;">
                         <button class="admin-btn btn-secondary" id="btn-cancel-fb">Cancelar</button>
                         <button class="admin-btn btn-primary" id="btn-save-fb">Salvar e Conectar</button>
@@ -708,16 +797,25 @@
                 </div>
             `;
             overlay.style.display = 'flex';
-            document.getElementById('btn-cancel-fb').addEventListener('click', closeAdminModal);
+            
+            document.getElementById('btn-cancel-fb').addEventListener('click', window.closeAdminModal);
+            
             document.getElementById('btn-save-fb').addEventListener('click', () => {
-                firebaseCfg.apiKey = document.getElementById('cfg-fb-key').value.trim();
-                firebaseCfg.projectId = document.getElementById('cfg-fb-pid').value.trim();
-                localStorage.setItem('kumon_v177_firebase', JSON.stringify(firebaseCfg));
-                alert("Firebase Configurado! A página será recarregada."); location.reload();
+                window.firebaseCfg.apiKey = document.getElementById('cfg-fb-key').value.trim();
+                window.firebaseCfg.projectId = document.getElementById('cfg-fb-pid').value.trim();
+                window.firebaseCfg.authDomain = document.getElementById('cfg-fb-auth').value.trim();
+                window.firebaseCfg.databaseURL = document.getElementById('cfg-fb-dburl').value.trim();
+                window.firebaseCfg.storageBucket = document.getElementById('cfg-fb-storage').value.trim();
+                window.firebaseCfg.messagingSenderId = document.getElementById('cfg-fb-sender').value.trim();
+                window.firebaseCfg.appId = document.getElementById('cfg-fb-appid').value.trim();
+
+                localStorage.setItem('kumon_v177_firebase', JSON.stringify(window.firebaseCfg));
+                alert("Firebase Configurado! A página será recarregada para se conectar."); 
+                location.reload();
             });
         });
 
-        window.onload = renderSlide;
+        window.onload = window.renderSlide;
     </script>
 </body>
 </html>

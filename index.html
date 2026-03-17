@@ -11,7 +11,7 @@
     <!-- Script Oficial Cloudinary -->
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 
-    <!-- FIREBASE COMPAT - REALTIME DATABASE -->
+    <!-- FIREBASE COMPAT - REALTIME DATABASE (Exclusivamente Realtime DB) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
 
@@ -206,19 +206,20 @@
         .btn-danger { background: #ef4444; color: white; }
         
         #firebase-warning {
-            position: absolute; top: 2vh; right: 2vw; background: #ef4444; color: white;
+            position: absolute; top: 2vh; right: 2vw; background: #22c55e; color: white;
             padding: 1vmin 2vmin; border-radius: 1vmin; font-size: 1.5vmin; font-weight: bold;
             z-index: 9999; display: none; box-shadow: 0 1vmin 2vmin rgba(0,0,0,0.2);
-            animation: pulse 2s infinite;
+            animation: fadeOut 5s forwards;
+            animation-delay: 3s;
         }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; display: none; } }
     </style>
 </head>
 <body>
 
     <div id="app-container">
         <div class="progress-bar" id="progress-bar"></div>
-        <div id="firebase-warning"><i class="fa-solid fa-triangle-exclamation"></i> Nuvem Offline (Configurar Firebase no Código)</div>
+        <div id="firebase-warning"><i class="fa-solid fa-cloud-check"></i> Conectado ao Firebase Realtime Database</div>
 
         <!-- HEADER -->
         <header class="header-area" id="main-header">
@@ -265,20 +266,20 @@
 
     <script>
         // =====================================================================
-        // ⚠️ CONFIGURAÇÃO OBRIGATÓRIA DO FIREBASE (NUVEM) ⚠️
-        // Para que o GitHub Pages mostre as fotos e links para TODOS os PCs
-        // e telemóveis do mundo, DEVE substituir as strings vazias "" abaixo
-        // pelas chaves que o Firebase lhe forneceu. Não deixe em branco!
+        // ⚠️ CHAVES OFICIAIS DO FIREBASE INSERIDAS PELO USUÁRIO
         // =====================================================================
-        window.firebaseCfg = {
-            apiKey: "", 
-            authDomain: "", 
-            projectId: "", 
-            storageBucket: "", 
-            messagingSenderId: "", 
-            appId: "",
-            databaseURL: "" 
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaFH2nn5VD9eTAdCcdkduDxfg8BbU-dM8",
+            authDomain: "reuniaokumon.firebaseapp.com",
+            projectId: "reuniaokumon",
+            storageBucket: "reuniaokumon.firebasestorage.app",
+            messagingSenderId: "672456540538",
+            appId: "1:672456540538:web:ffcb6eeb8338bb13d796c3",
+            // Adicionado explicitamente para garantir que a conexão vá para o REALTIME DATABASE
+            databaseURL: "https://reuniaokumon-default-rtdb.firebaseio.com"
         };
+        
+        window.firebaseCfg = firebaseConfig;
 
         // CONFIGURAÇÕES BASE
         function safeParseJSON(key, defaultObj) {
@@ -302,36 +303,35 @@
         window.cloudinaryConfig = safeParseJSON('kumon_v177_cloud', {cloudName: "", preset: ""});
         
         let db = null;
-        const isFirebaseConfigured = window.firebaseCfg.apiKey && window.firebaseCfg.apiKey.length > 5;
         
-        if (isFirebaseConfigured) {
-            try {
-                if (!window.firebaseCfg.databaseURL) {
-                    window.firebaseCfg.databaseURL = `https://${window.firebaseCfg.projectId}-default-rtdb.firebaseio.com`;
+        try {
+            // Inicializa a App do Firebase com as SUAS chaves
+            firebase.initializeApp(window.firebaseCfg);
+            
+            // A CHAMADA ABAIXO É EXCLUSIVA DO REALTIME DATABASE! (Firestore seria firebase.firestore())
+            db = firebase.database(); 
+            
+            // Leitura em tempo real a partir do Realtime Database
+            db.ref("kumon_config/settings").on("value", (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    window.savedLinks = data.links || window.savedLinks;
+                    window.savedMedia = data.media || window.savedMedia;
+                    window.cloudinaryConfig = data.cloudinary || window.cloudinaryConfig;
+                    
+                    localStorage.setItem('kumon_v177_links', JSON.stringify(window.savedLinks));
+                    localStorage.setItem('kumon_v177_media', JSON.stringify(window.savedMedia));
+                    localStorage.setItem('kumon_v177_cloud', JSON.stringify(window.cloudinaryConfig));
+                    
+                    window.renderSlide();
                 }
-
-                firebase.initializeApp(window.firebaseCfg);
-                db = firebase.database(); 
-                
-                // Leitura em tempo real a partir da Nuvem
-                db.ref("kumon_config/settings").on("value", (snapshot) => {
-                    if (snapshot.exists()) {
-                        const data = snapshot.val();
-                        window.savedLinks = data.links || window.savedLinks;
-                        window.savedMedia = data.media || window.savedMedia;
-                        window.cloudinaryConfig = data.cloudinary || window.cloudinaryConfig;
-                        
-                        localStorage.setItem('kumon_v177_links', JSON.stringify(window.savedLinks));
-                        localStorage.setItem('kumon_v177_media', JSON.stringify(window.savedMedia));
-                        localStorage.setItem('kumon_v177_cloud', JSON.stringify(window.cloudinaryConfig));
-                        
-                        window.renderSlide();
-                    }
-                });
-            } catch(e) { console.error("Erro Firebase Realtime DB: ", e); }
-        } else {
-            // Mostra um aviso no ecrã para se lembrar de colar as chaves no código
+            });
+            
             document.getElementById('firebase-warning').style.display = 'block';
+            console.log("Conectado com sucesso ao Firebase Realtime Database!");
+
+        } catch(e) { 
+            console.error("Erro Firebase Realtime DB: ", e); 
         }
 
         // FUNÇÃO GLOBAL DE SALVAMENTO (LOCAL E NUVEM)
@@ -340,7 +340,7 @@
             localStorage.setItem('kumon_v177_media', JSON.stringify(window.savedMedia));
             localStorage.setItem('kumon_v177_cloud', JSON.stringify(window.cloudinaryConfig));
             
-            // Salva na Nuvem se o BD estiver ativo
+            // Salva no Realtime Database
             if (db) {
                 db.ref("kumon_config/settings").set({
                     links: window.savedLinks, 
